@@ -63,3 +63,13 @@ Then both spots become:
 One source of truth, and the dedupe+sort runs once per render instead of twice.
 
 `Map` keeps the **first** occurrence of each field, so if the two `closedCaseEntityMethod` entries have different headers, you'll get whichever appears first in `hiddenColumns`. Worth a glance at the source definitions to confirm that's the one you want.
+
+
+Good catch, but I don't think we have to give up default sorts. PrimeReact's DataTable has a built-in pre-sort — you pass sortField + sortOrder on the table (or multiSortMeta for multi-column) and it renders already sorted on first paint. No custom logic, no extra call.
+
+On the rename risk: the columns are already bound to the DB field names through Column field="...", so a rename breaks the grid regardless of whether a default sort exists. It's the same coupling we already have. Two things keep it safe:
+
+1. Put the default-sort flag on the field definition record itself so it travels with the field, instead of storing field names in a separate config that can drift.
+2. Validate sortField against the current column list before passing it in, and fall back to unsorted if it doesn't match. A rename then degrades quietly instead of erroring.
+
+So I'd say include the default sort in this ticket. Only caveat: if any column needs a custom sortFunction, that doesn't get applied on the initial pre-sort render, only after a header click — fine for plain string/date/number fields.
